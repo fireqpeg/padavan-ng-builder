@@ -1,17 +1,17 @@
 #!/bin/bash
 set -x
 
-# 1. Megkeressük az MT7621 órajel-beállító fájlt (arch/mips/rt2880/init.c)
-INIT_FILE=$(find . -path "*/arch/mips/rt2880/init.c" | head -n 1)
-if [ -n "$INIT_FILE" ]; then
-    echo "Talált init.c fájl: $INIT_FILE"
-    grep -n -C 15 "880" "$INIT_FILE" || true
+INIT_FILE="padavan-ng/trunk/linux-3.4.x/arch/mips/rt2880/init.c"
+if [ -f "$INIT_FILE" ]; then
+    # Kiírjuk a naplóba az órajel-számítás körüli sorokat
+    grep -n -C 10 "CPU/OCP/SYS" "$INIT_FILE" || true
     
-    # Csak a 880 MHz (0x2C -> 44*20=880) és 900 MHz (0x2D -> 45*20=900) szorzót írjuk át 0x32-re (50*20=1000 MHz)
-    sed -i 's/0x2C/0x32/g' "$INIT_FILE"
-    sed -i 's/0x2c/0x32/g' "$INIT_FILE"
-    sed -i 's/0x2D/0x32/g' "$INIT_FILE"
-    sed -i 's/0x2d/0x32/g' "$INIT_FILE"
+    # Csak a konkrét órajel-értékeket (880000000 / 900000000) írjuk át 1000000000-re (1000 MHz),
+    # és a PLL szorzó maszkot csak ott módosítjuk, ahol a regiszterbit-eltolás (<< 4) szerepel!
     sed -i 's/880000000/1000000000/g' "$INIT_FILE"
     sed -i 's/900000000/1000000000/g' "$INIT_FILE"
+    sed -i 's/(0x2C << 4)/(0x32 << 4)/g' "$INIT_FILE"
+    sed -i 's/(0x2c << 4)/(0x32 << 4)/g' "$INIT_FILE"
+    sed -i 's/(0x2D << 4)/(0x32 << 4)/g' "$INIT_FILE"
+    sed -i 's/(0x2d << 4)/(0x32 << 4)/g' "$INIT_FILE"
 fi
